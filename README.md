@@ -1,66 +1,48 @@
+## 📊 Full Dataset
 
-# Cyclistic Bike Share Analysis 🚴‍♂️📊
+The complete cleaned dataset used in this analysis is available on Google Drive:
 
-## **Quick Elevator Pitch**
-Analyzed **Cyclistic bike share data** to uncover user behavior, ride patterns, and trends using **R** and **tidyverse**.  
-Cleaned and visualized data to identify peak usage times, ride durations, and differences between casual users and annual members.  
-This project showcases **data analysis, visualization, and storytelling skills**, making it portfolio-ready for data analyst roles.  
+👉 [Download Full Dataset (123 MB)](https://drive.google.com/file/d/1RwAEKWm7K1owb8KUsF9kHZgSnWJ_Y0mu/view?usp=sharing)
 
----
-
-## **Project Overview**  
-This project explores **Cyclistic bike share trip data** to uncover user behavior, ride patterns, and usage trends. Using **R** and the **tidyverse** ecosystem, the analysis delivers actionable insights with clear, reproducible visualizations.  
+A smaller sample of the dataset is available in this repository for reference and quick testing.
 
 ---
 
-## **Key Highlights**  
-- Cleaned and preprocessed raw Cyclistic data for accurate analysis  
-- Explored ride patterns by **user type, time of day, day of week, and ride duration**  
-- Generated visualizations to identify trends and behavioral differences  
-- Produced a fully reproducible report in **R Markdown** with HTML output  
+## 📂 Project Overview
+
+This project analyzes **Cyclistic bike-share data** to uncover ride patterns, user behavior, and station popularity.  
+It includes **data cleaning, exploratory analysis, and visualizations** using **R (tidyverse, ggplot2, lubridate)**.
 
 ---
 
-## **Project Structure**  
-\`\`\`
-cyclistic-bike-share-analysis/
-├── cyclistic_bike_share_analysis.Rmd   # Full R Markdown analysis
-├── cyclistic_bike_share_analysis.html  # HTML output of analysis
-├── README.md                           # Project description (this file)
-├── .gitignore                          # Git ignore settings
-└── plots/                              # Folder containing all visualizations
-\`\`\`
+## 📈 Key Visualizations
+
+- Rides by User Type  
+- Rides per Day of the Week  
+- Ride Duration Distribution  
+- Rides by Bike ID  
+- Top 10 Start Stations  
+
+All visualizations are stored in the `plots/` folder.
 
 ---
 
-## **Technologies Used**  
-- **R** | **tidyverse** | **ggplot2** | **dplyr** | **lubridate**  
+## 🧠 Key Insights
+
+- **Subscribers** ride more frequently than **Customers**.  
+- **Weekdays** show higher ride volumes.  
+- Most trips last **under 30 minutes**.  
+- **Top stations** are concentrated in central business and tourist areas.
 
 ---
 
-## **Key Insights**  
-- Identified **peak ride times** and **popular days**  
-- Compared behaviors of **casual users vs. annual members**  
-- Analyzed **ride duration trends** and patterns across user types  
+## 🛠️ Tools Used
+
+- R  
+- tidyverse  
+- ggplot2  
+- lubridate  
 
 ---
 
-## **Sample Visualizations**  
-Here are a few sample plots from the analysis:
-
-![Ride Counts by User Type](plots/ride_counts_by_user_type.png)
-![Ride Duration Trends](plots/ride_duration_trends.png)
-![Rides by Day of Week](plots/rides_by_day_of_week.png)
-
-> **Note:** Replace the plot names above with your actual plot filenames in the `plots/` folder.
-
----
-
-## **How to Explore**  
-1. Open `cyclistic_bike_share_analysis.html` in a browser for the complete report  
-2. Use `cyclistic_bike_share_analysis.Rmd` to view the code, reproduce the analysis, or modify it  
-
----
-
-## **Tags / Topics**  
-`R` | `Data Analysis` | `Data Visualization` | `Exploratory Data Analysis` | `Cyclistic` | `Bike Share` | `tidyverse` | `ggplot2`
+📈 *Project by [Ranjithkumar R.K](https://github.com/RKRanjithkumarRK)*  
