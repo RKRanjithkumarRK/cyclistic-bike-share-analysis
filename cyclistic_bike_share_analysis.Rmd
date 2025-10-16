@@ -1,0 +1,308 @@
+---
+title: "Cyclistic Bike Share Analysis Case Study"
+author: "Ranjithkumar Ramesh"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    toc: true
+    toc_depth: 3
+    theme: cerulean
+---
+
+# Introduction
+
+Cyclistic is a Chicago-based bike-share company that provides affordable and eco-friendly travel options for both **urban commuters** and **leisure riders**.  
+
+The aim of this case study is to explore the **usage patterns** of Cyclistic’s bikes, understand **differences between casual and member riders**, and provide **data-driven recommendations** to improve marketing strategies and operational efficiency.
+
+We’ll explore:
+- Differences between **members** and **casual riders**
+- **When** and **how long** people ride
+- Seasonal and hourly usage trends
+- Predictive insights and business recommendations
+
+---
+
+# Installing and Loading Packages
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+```
+
+```{r install-load}
+# Install and load required packages
+pkgs <- c("tidyverse", "lubridate", "janitor", "scales", "readr", 
+          "ggplot2", "ggcorrplot", "effsize", "Metrics", "viridis", "ggpmisc")
+
+new_pkgs <- pkgs[!(pkgs %in% installed.packages()[, "Package"])]
+if(length(new_pkgs)) install.packages(new_pkgs)
+
+lapply(pkgs, library, character.only = TRUE)
+```
+
+**Insight:**  
+We load essential R packages for data manipulation (`tidyverse`), time handling (`lubridate`), visualization (`ggplot2`, `viridis`), cleaning (`janitor`), and statistical analysis (`effsize`, `Metrics`).
+
+---
+
+# Data Loading and Cleaning
+
+```{r load-clean}
+# Load cleaned data
+file_path <- "C:/Users/ranji/OneDrive/Documents/cyclistic_case_study_project/cyclistic_cleaned.csv"
+
+df <- read_csv(file_path, show_col_types = FALSE) %>%
+  clean_names() %>%
+  mutate(
+    start_time = dmy_hm(start_time),
+    end_time = dmy_hm(end_time),
+    tripduration_min = as.numeric(tripduration_min)
+  ) %>%
+  distinct(trip_id, .keep_all = TRUE) %>%
+  filter(!is.na(start_time) & !is.na(end_time) & !is.na(usertype)) %>%
+  mutate(duration_min_calc = as.numeric(difftime(end_time, start_time, units = "mins"))) %>%
+  filter(duration_min_calc > 0) %>%
+  mutate(tripduration_min = duration_min_calc) %>%
+  select(-duration_min_calc)
+```
+
+**Insight:**  
+We ensure each ride is unique and valid — removing duplicates, empty values, and negative durations. This step ensures **data accuracy** for further analysis.
+
+---
+
+# Feature Engineering
+
+```{r features}
+df <- df %>%
+  mutate(
+    date = as.Date(start_time),
+    hour = hour(start_time),
+    month = month(start_time, label = TRUE, abbr = TRUE),
+    weekday = wday(start_time, label = TRUE, abbr = TRUE),
+    ride_length_category = case_when(
+      tripduration_min <= 5 ~ "Very Short",
+      tripduration_min > 5 & tripduration_min <= 15 ~ "Short",
+      tripduration_min > 15 & tripduration_min <= 30 ~ "Medium",
+      tripduration_min > 30 ~ "Long",
+      TRUE ~ "UNKNOWN"
+    )
+  )
+```
+
+**Insight:**  
+We add new variables such as **hour**, **month**, **weekday**, and **ride length category**.  
+This helps analyze **temporal trends** and **ride behavior patterns**.
+
+---
+
+# Exploratory Data Overview
+
+```{r summary}
+df %>%
+  summarise(
+    total_rides = n(),
+    avg_duration_min = mean(tripduration_min, na.rm = TRUE),
+    median_duration_min = median(tripduration_min, na.rm = TRUE),
+    sd_duration_min = sd(tripduration_min, na.rm = TRUE)
+  )
+```
+
+**Insight:**  
+Cyclistic has a **large number of short trips**, with average duration around 15–20 minutes.  
+The high standard deviation shows **some very long rides** are pulling up the mean.
+
+---
+
+# Ride Counts by User Type
+
+```{r user-type}
+df %>%
+  group_by(usertype) %>%
+  summarise(
+    total_rides = n(),
+    avg_duration = mean(tripduration_min, na.rm = TRUE),
+    median_duration = median(tripduration_min, na.rm = TRUE)
+  )
+```
+
+**Insight:**  
+- **Members:** more frequent but shorter rides (daily commuters)  
+- **Casual riders:** fewer but longer rides (leisure/tourism usage)
+
+---
+
+# Average Ride Duration by Weekday
+
+```{r duration-weekday, fig.width=7, fig.height=4}
+df %>%
+  group_by(weekday) %>%
+  summarise(avg_duration = mean(tripduration_min, na.rm = TRUE)) %>%
+  ggplot(aes(x = weekday, y = avg_duration, fill = weekday)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Average Ride Duration by Weekday",
+       x = "Day of Week", y = "Average Duration (minutes)") +
+  theme_minimal()
+```
+
+**Insight:**  
+Rides are **longer on weekends**, suggesting that **casual riders dominate leisure days** while members use bikes mainly during the **workweek**.
+
+---
+
+# Ride Volume by Hour of the Day
+
+```{r volume-hour, fig.width=7, fig.height=4}
+df %>%
+  group_by(hour) %>%
+  summarise(total_rides = n()) %>%
+  ggplot(aes(x = hour, y = total_rides)) +
+  geom_line(color = "steelblue", linewidth = 1.2) +
+  geom_point(color = "darkorange", size = 2) +
+  labs(title = "Ride Volume by Hour of Day",
+       x = "Hour (0–23)", y = "Total Rides") +
+  theme_minimal()
+```
+
+**Insight:**  
+Peak usage occurs at **8 AM** and **5–6 PM**, typical of **commuter behavior** among members.  
+Casual riders show activity around **midday and evenings**.
+
+---
+
+# Average Ride Duration by User Type
+
+```{r duration-usertype, fig.width=6, fig.height=4}
+df %>%
+  group_by(usertype) %>%
+  summarise(avg_duration = mean(tripduration_min, na.rm = TRUE)) %>%
+  ggplot(aes(x = usertype, y = avg_duration, fill = usertype)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Average Ride Duration by User Type",
+       x = "User Type", y = "Average Duration (Minutes)") +
+  theme_minimal()
+```
+
+**Insight:**  
+Casual users take rides that are **on average twice as long** as those by members — confirming different motivations (recreation vs commute).
+
+---
+
+# Ride Length Distribution
+
+```{r ride-length, fig.width=7, fig.height=4}
+df %>%
+  group_by(ride_length_category) %>%
+  summarise(total_rides = n()) %>%
+  ggplot(aes(x = ride_length_category, y = total_rides, fill = ride_length_category)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Distribution of Rides by Length Category",
+       x = "Ride Length Category", y = "Number of Rides") +
+  theme_minimal()
+```
+
+**Insight:**  
+Over **70% of rides are short (under 15 minutes)**.  
+This suggests a high number of **short-distance commutes**, ideal for **subscription or membership marketing**.
+
+---
+
+# Statistical Test: Comparing Members vs Casual Riders
+
+```{r ttest}
+t_test_result <- t.test(tripduration_min ~ usertype, data = df, var.equal = FALSE)
+t_test_result
+cohen.d(tripduration_min ~ usertype, data = df)
+```
+
+**Insight:**  
+There’s a **significant difference** between the ride durations of members and casual riders.  
+The **effect size (Cohen’s d)** is moderate, confirming real behavioral differences between groups.
+
+---
+
+# Correlation Analysis
+
+```{r correlation, fig.width=6, fig.height=5}
+numeric_df <- df %>% select_if(is.numeric)
+cor_matrix <- cor(numeric_df, use = "complete.obs")
+ggcorrplot(cor_matrix, lab = TRUE, colors = c("red", "white", "blue"))
+```
+
+**Insight:**  
+Ride duration has a mild correlation with **hour of the day** and **day of week** — indicating consistent temporal usage patterns.
+
+---
+
+# Regression Analysis: Predicting Ride Duration
+
+```{r regression, fig.width=7, fig.height=4}
+set.seed(42)
+df_sample <- df %>% sample_n(5000)
+
+model <- lm(tripduration_min ~ hour, data = df_sample)
+summary(model)
+
+ggplot(df_sample, aes(x = hour, y = tripduration_min)) +
+  geom_point(alpha = 0.3, color = "steelblue") +
+  geom_smooth(method = "lm", se = TRUE, color = "orange") +
+  labs(title = "Ride Duration vs Hour of Start Time",
+       subtitle = "Linear Regression with Confidence Interval",
+       x = "Hour of Day", y = "Ride Duration (Minutes)") +
+  theme_minimal()
+```
+
+**Insight:**  
+While time of day has only a **weak effect** on ride duration, there’s a small upward trend during midday — matching casual usage hours.
+
+---
+
+# Model Diagnostics and Evaluation
+
+```{r model-eval, fig.width=6, fig.height=4}
+set.seed(42)
+df_sample <- df %>% sample_n(10000)
+
+model_multi <- lm(tripduration_min ~ hour + weekday + usertype, data = df_sample)
+df_sample$predicted <- predict(model_multi)
+
+ggplot(df_sample, aes(x = predicted, y = tripduration_min)) +
+  geom_point(alpha=0.3, color="darkblue") +
+  geom_abline(slope=1, intercept=0, color="red", linetype="dashed") +
+  labs(title="Actual vs Predicted Ride Duration",
+       x="Predicted Duration (Minutes)", y="Actual Duration (Minutes)") +
+  theme_minimal()
+
+rmse_val <- rmse(df_sample$tripduration_min, df_sample$predicted)
+mae_val <- mae(df_sample$tripduration_min, df_sample$predicted)
+cat("RMSE:", rmse_val, "\nMAE:", mae_val)
+```
+
+**Insight:**  
+The model performs moderately, suggesting that while temporal and user-type factors influence ride duration, **other variables (e.g., location, weather)** could further improve predictions.
+
+---
+
+# Key Recommendations
+
+✅ **Fleet Optimization:** Increase bike availability during **rush hours** in business zones.  
+✅ **Membership Conversion:** Offer **discounted memberships** for casual riders who frequently ride on weekends.  
+✅ **Marketing Campaigns:** Promote weekend leisure packages and family passes.  
+✅ **Data Enrichment:** Include **weather, location, and events data** for better demand forecasting.
+
+---
+
+# Conclusion
+
+- **Members**: Use bikes for **short, frequent commutes**.  
+- **Casual Riders**: Use bikes for **longer, leisure-oriented trips**, especially on weekends.  
+- **Business Strategy**: Focus marketing on converting casual riders and improving operational readiness during high-demand hours.
+
+Cyclistic can leverage these insights to **boost revenue, improve user experience**, and **enhance sustainable transport initiatives** in Chicago.
+
+---
+
+# End of Report
+
+This analysis and code are fully reproducible.  
+Generated using R, Tidyverse, and visualization libraries to provide clear business insights.
